@@ -153,39 +153,85 @@ let get_tutor_new_subject = async(req,res) => {
 }
 
 
-let accept_new_subject = (req, res) => {
-    let{Id, Status} = req.body;
-    marom_db(async(config) => {
-        const sql = require('mssql');
+let accept_new_subject = async(req, res) => {
+    let{id,subject,AcademyId} = req.body;
+    console.log(id,subject,AcademyId)
+
+    let date = new Date().toDateString()
     
-        var poolConnection = await sql.connect(config);
-       // console.log(poolConnection._connected)
-        if(poolConnection){
-            poolConnection.request().query(
-                `
-                    INSERT INTO Faculty(FacultyId, SubjectName, CreatedOn) values('${id}','${subject}','${date}')
-                `
-            )
-            .then((result) => {
-                
-                result.rowsAffected[0] === 1 ? res.status(200).send({bool: true, mssg: 'Student status was updated successfully'}) : res.status(200).send({bool: false, mssg: 'Tutor status was not updated successfully please try'})
+    
+    let insert = await connecteToDB
+    .then(async(poolConnection) => {
+        poolConnection.request().query( ` INSERT INTO Subjects(FacultyId, SubjectName, CreatedOn) values('${id}','${subject}', '')`)
+        .then((result) => {
 
-                //result.recordset.map(item => item.AcademyId === user_id ? item : null)
-            })
-            .catch(err =>
-                res.status(200).send({bool: false, mssg: 'Database Error, Please Try Again...'})
-            )
+            return result.rowsAffected[0] === 1 ? true : false
 
-        }
+        })
+        .catch(err => console.log(err))
     
     })
+    .catch(err =>
+        res.status(200).send({bool: false, mssg: 'Database Error, Please Try Again...'})
+    )
+
+
+    if(insert){
+
+        connecteToDB
+        .then(async(poolConnection) => {
+            poolConnection.request().query( ` DELETE FROM NewTutorSubject WHERE CONVERT(VARCHAR, subject) = '${subject}' AND CONVERT(VARCHAR, AcademyId) = '${AcademyId}' `)
+            .then((result) => {
+
+                result.rowsAffected[0] === 1 ? res.status(200).send({bool: true, mssg: 'Data was uploaded successfully'}) : res.status(200).send({bool: false, mssg: 'Database Error, Please Try Again...'})
+
+
+            })
+            .catch(err => console.log(err))
+        
+        })
+        .catch(err =>
+            res.status(200).send({bool: false, mssg: 'Database Error, Please Try Again...'})
+        )
+
+    }else{
+        console.log('error inserting data to db')
+        res.status(200).send({bool: false, mssg: 'Database Error, Please Try Again...'})
+
+    }
+
+
 }
 
+
+let decline_new_subject = (req, res) => {
+    let{subject,AcademyId} = req.body;
+    
+    
+    connecteToDB
+    .then(async(poolConnection) => {
+        poolConnection.request().query( ` DELETE FROM NewTutorSubject WHERE CONVERT(VARCHAR, subject) = '${subject}' AND CONVERT(VARCHAR, AcademyId) = '${AcademyId}' `)
+        .then((result) => {
+
+            result.rowsAffected[0] === 1 ? res.status(200).send({bool: true, mssg: 'Data was uploaded successfully'}) : res.status(200).send({bool: false, mssg: 'Error uploading files, Please Try Again...'})
+
+        })
+        .catch(err => console.log(err))
+    
+    })
+    .catch((err) => {
+        res.status(200).send({bool: false, mssg: 'Database Error, Please Try Again...'})
+        console.log(err)
+    })
+
+
+}
 module.exports = {
     get_tutor_data,
     get_student_data,
     set_tutor_status,
     set_student_status,
     get_tutor_new_subject,
-    accept_new_subject
+    accept_new_subject,
+    decline_new_subject
 }

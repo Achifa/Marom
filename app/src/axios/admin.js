@@ -3,6 +3,39 @@ import axios from "axios"
 
 
 
+export let delete_new_subject = (subject,AcademyId) => {
+
+    return new Promise((resolve, reject) => {
+
+    
+        axios.post('http://localhost:9876/admin/delete-new-subject', {subject,AcademyId})
+        .then((result) => {
+            resolve(result.data) 
+        })
+        .catch((err) => {
+            reject(err)
+        })
+
+    })
+    
+}
+
+export let post_new_subject = (id,subject,AcademyId) => {
+
+    return new Promise((resolve, reject) => {
+
+    
+        axios.post('http://localhost:9876/admin/post-new-subject', {id,subject,AcademyId})
+        .then((result) => {
+            resolve(result.data) 
+        })
+        .catch((err) => {
+            reject(err)
+        })
+
+    })
+}
+
 export let get_tutor_new_subject = () => {
 
     return new Promise((resolve, reject) => {
