@@ -1,14 +1,14 @@
 const { resolve } = require('path/posix');
 const { marom_db, knex, connecteToDB } = require('../db');
 const { shortId } = require('../modules');
-const { insert, updateById, getAll } = require('../helperfunctions/crud_queries');
+const { insert, updateById, getAll, find } = require('../helperfunctions/crud_queries');
 
 
 
 let post_new_subject = (req, res) => {
 
 
-    let {faculty, subject, reason, AcademyId, facultyId } = req.body;
+    let { faculty, subject, reason, AcademyId, facultyId } = req.body;
 
     let date = new Date();
 
@@ -44,6 +44,8 @@ let post_new_subject = (req, res) => {
     })
 }
 let subjects = (req, res) => {
+
+    let { id } = req.query;
     marom_db(async (config) => {
         const sql = require('mssql');
 
@@ -52,7 +54,7 @@ let subjects = (req, res) => {
         if (poolConnection) {
             var resultSet = await poolConnection.request().query(
                 `
-                    SELECT Id,FacultyId,SubjectName FROM Subjects
+                    SELECT Id,FacultyId,SubjectName FROM Subjects WHERE CONVERT(VARCHAR, FacultyId) =  '${id}'
                 `
             )
 
@@ -796,32 +798,32 @@ let get_tutor_rates = (req, res) => {
     })
 }
 
-let faculties = (req,res) => {
-    marom_db(async(config) => {
+let faculties = (req, res) => {
+    marom_db(async (config) => {
         const sql = require('mssql');
-    
+
         var poolConnection = await sql.connect(config);
-       // console.log(poolConnection._connected)
-        if(poolConnection){
+        // console.log(poolConnection._connected)
+        if (poolConnection) {
             poolConnection.request().query(
                 `
                     SELECT * From Faculty  
                 `
             )
-            .then((result) => {
-                console.log(result.recordset)
-                res.status(200).send(result.recordset)
-                //result.recordset.map(item => item.AcademyId === user_id ? item : null)
-            })
-            .catch(err => console.log(err))
+                .then((result) => {
+                    console.log(result.recordset)
+                    res.status(200).send(result.recordset)
+                    //result.recordset.map(item => item.AcademyId === user_id ? item : null)
+                })
+                .catch(err => console.log(err))
 
         }
-    
+
     })
 }
 
-let get_bank_details = (req,res) => {
-    let {AcademyId} = req.query;
+let get_bank_details = (req, res) => {
+    let { AcademyId } = req.query;
     console.log(AcademyId)
     marom_db(async (config) => {
         const sql = require('mssql');
@@ -971,20 +973,16 @@ let get_tutor_status = (req, res) => {
     })
 }
 
-
-
-let fetchEvents = (req, res) => {
+let fetchStudentsBookings = (req, res) => {
     try {
+        const { tutorId } = req.params;
         marom_db(async (config) => {
             const sql = require('mssql');
 
             var poolConnection = await sql.connect(config);
             if (poolConnection) {
-                console.log('poolconneciotn');
                 poolConnection.request().query(
-                    `
-                 SELECT * FROM Events
-                `
+                    find('StudentBookings', { tutorId })
                 )
                     .then((result) => {
                         console.log(result, 'fetch result')
@@ -997,7 +995,7 @@ let fetchEvents = (req, res) => {
             }
         })
     } catch (error) {
-        console.error("Error storing dates:", error);
+        console.error("Error storing Events:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 };
@@ -1027,7 +1025,7 @@ module.exports = {
     get_tutor_rates,
     get_bank_details,
     storeEvents,
-    fetchEvents,
+    fetchStudentsBookings,
     storeCalenderTutorRecord,
     get_tutor_status
 }
